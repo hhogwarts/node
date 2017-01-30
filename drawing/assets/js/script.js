@@ -7,7 +7,7 @@ $(function(){
 	}
 
 	// The URL of your web server (the port is set in app.js)
-	var url = 'http://localhost:8080';
+	var url = 'http://localhost:8081';
 
 	var doc = $(document),
 		win = $(window),
@@ -24,8 +24,9 @@ $(function(){
 	var clients = {};
 	var cursors = {};
 
+    console.log('kaushik');
 	var socket = io.connect(url);
-
+    console.log(socket);
 	socket.on('moving', function (data) {
 
 		if(! (data.id in clients)){
