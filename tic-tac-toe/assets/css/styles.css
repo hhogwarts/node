@@ -1,0 +1,21 @@
+#parent{
+    width: 300px;
+    height: 300px;
+    box-shadow: 0px 0px 16px black;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    margin: auto;
+}
+.child{
+    width: 100px;
+    height: 100px;
+    float: left;
+    box-shadow: 7px 6px 10px burlywood;
+    cursor: pointer;
+    background-image: url("../images/x.jpg");
+    background-repeat: no-repeat;
+    background-position: center;
+}
