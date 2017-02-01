@@ -1,8 +1,9 @@
+var express = require('express');
 var http = require('http');
 var fs = require('fs');
 var path = require('path');
 
-http.createServer(function(request, response){
+var server = http.createServer(function(request, response){
     console.log('request starting');
 
     var filePath = '.' + request.url;
@@ -42,9 +43,29 @@ http.createServer(function(request, response){
         }
     });
 
-}).listen(8081);
+});
 console.log('server is running in 8081');
+var io = require('socket.io').listen(server);
 
+server.listen(8081);
+var totalConnection = 0;
+io.sockets.on('connection', onSocketConnection);
+
+function onSocketConnection(socket){
+    console.log(socket.id);
+
+    socket.on('disconnect', function(){
+        --totalConnection;
+        console.log('socket disconnected');
+    });
+
+    socket.on('clicked', function(data){
+        console.log('received the clicked event: ' + data.row, data.column);
+        socket.broadcast.emit('emittedClick', data);
+        console.log('brodcasted click event');
+    });
+    console.log(++totalConnection + 'player connected');
+}
 
 
 

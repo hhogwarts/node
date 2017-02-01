@@ -1,5 +1,7 @@
+<!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8" />
         <title>
             Tic Tac Toe
         </title>
@@ -7,16 +9,19 @@
     </head>
     <body>
         <div id='parent'>
-            <div id='child0' class='child'></div>
-            <div id='child1' class='child'></div>
-            <div id='child2' class='child'></div>
-            <div id='child3' class='child'></div>
-            <div id='child4' class='child'></div>
-            <div id='child5' class='child'></div>
-            <div id='child6' class='child'></div>
-            <div id='child7' class='child'></div>
-            <div id='child8' class='child'></div>
+            <div id='playerCount'></div>
+            <div id='child00' class='child'></div>
+            <div id='child01' class='child'></div>
+            <div id='child02' class='child'></div>
+            <div id='child10' class='child'></div>
+            <div id='child11' class='child'></div>
+            <div id='child12' class='child'></div>
+            <div id='child20' class='child'></div>
+            <div id='child21' class='child'></div>
+            <div id='child22' class='child'></div>
         </div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://code.jquery.com/jquery-1.8.0.min.js"></script>
         <script src="assets/js/app.js"></script>
     </body>
 </html>
