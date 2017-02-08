@@ -1,10 +1,13 @@
+var exports = module.exports = {};
+
 var Player = function(){
     var id = '';
     var selectionMatrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
     var winType = '';   //row0, row1, row2, column0, column1, column2, diagonal0(00 -> 22), diagonal1(02 -> 20)
+    var symbol = '';
 
     var setSelection = function(row, column){
-        selectionMatrix[row][column] = 1;
+        selectionMatrix[row][column] = symbol;
     };
     var resetMatrix = function(){
         selectionMatrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
@@ -45,7 +48,10 @@ var Player = function(){
         setSelection: setSelection,
         resetMatrix: resetMatrix,
         hasWon: hasWon,
-        id: id
-    }
+        id: id,
+        symbol: symbol
+    };
+};
 
-}
+// var player = new Player();
+exports.Player = Player;

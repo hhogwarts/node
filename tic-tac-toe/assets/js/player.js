@@ -5,7 +5,7 @@ var Player = function(){
     var symbol = '';
 
     var setSelection = function(row, column){
-        selectionMatrix[row][column] = 1;
+        selectionMatrix[row][column] = symbol;
     };
     var resetMatrix = function(){
         selectionMatrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
@@ -41,15 +41,12 @@ var Player = function(){
         }
         return false;
     };
-    var setSymbol = function(sym){
-        symbol = sym;
-    }
+
     return {
         setSelection: setSelection,
         resetMatrix: resetMatrix,
         hasWon: hasWon,
         id: id,
-        setSymbol: setSymbol
-    }
-
-}
+        symbol: symbol
+    };
+};
