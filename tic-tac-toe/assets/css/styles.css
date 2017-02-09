@@ -1,6 +1,6 @@
 #parent{
-    width: 300px;
-    height: 330px;
+    width: 340px;
+    height: 370px;
     box-shadow: 0px 0px 16px black;
     top: 0;
     left: 0;
@@ -22,6 +22,9 @@
     font-size: 40px;
     font-weight: bold;
     line-height: 91px;
+    margin-left: 10px;
+    margin-top: 10px;
+    user-select: none;
 }
 #playerCount {
     width: 100%;
@@ -30,4 +33,8 @@
     text-align: center;
     line-height: 28px;
     font-weight: bold;
+}
+.disabled .child {
+    background-color: #eeeeee;
+    cursor: not-allowed;
 }

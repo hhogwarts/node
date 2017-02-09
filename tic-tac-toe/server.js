@@ -110,8 +110,8 @@ function createNewPlayer(data) {
     var newPlayer = new Player();
     newPlayer.id = self.id;
     newPlayer.symbol = symbol;
-    self.broadcast.emit("new player", {id: newPlayer.id, symbol: newPlayer.symbol});
     self.emit("my id", {id: newPlayer.id, symbol: symbol});
+    self.broadcast.emit("new player", {id: newPlayer.id, symbol: newPlayer.symbol});
     Object.keys(players).forEach(function(id, index){
         self.emit("remote players", {id: id, symbol: players[id].symbol});
     }.bind(self));

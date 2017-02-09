@@ -4,11 +4,20 @@ var Player = function(){
     var winType = '';   //row0, row1, row2, column0, column1, column2, diagonal0(00 -> 22), diagonal1(02 -> 20)
     var symbol = '';
 
-    var setSelection = function(row, column){
-        selectionMatrix[row][column] = symbol;
+    var setSelection = function(row, column, sym){
+        if(sym === undefined){
+            sym = this.symbol
+        }
+        selectionMatrix[row][column] = sym;
     };
     var resetMatrix = function(){
         selectionMatrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    };
+    var isClickable = function(i, j){
+        if(selectionMatrix[i][j]){
+            return false;
+        }
+        return true;
     };
     var hasWon = function(){
         if(selectionMatrix[0][0] && selectionMatrix[1][1] && selectionMatrix[2][2]){
@@ -41,12 +50,17 @@ var Player = function(){
         }
         return false;
     };
+    var getMatrix = function(){
+        return selectionMatrix;
+    };
 
     return {
         setSelection: setSelection,
         resetMatrix: resetMatrix,
         hasWon: hasWon,
         id: id,
-        symbol: symbol
+        symbol: symbol,
+        isClickable: isClickable,
+        getMatrix: getMatrix
     };
 };
