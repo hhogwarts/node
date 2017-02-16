@@ -23,6 +23,7 @@ function onMyId(data){
     var newPlayer = new Player();
     newPlayer.id = data.id;
     newPlayer.symbol = data.symbol;
+    newPlayer.gameId = data.gameId;
     localPlayer = newPlayer;
     document.getElementById('playerCount').innerHTML = '1 Connected: Waiting for Another Player';
 }
@@ -31,6 +32,7 @@ function onNewPlayer(data) {
     var newPlayer = new Player();
     newPlayer.id = data.id;
     newPlayer.symbol = data.symbol;
+    newPlayer.gameId = data.gameId;
     remotePlayers[data.id] = newPlayer;
     document.getElementById('playerCount').innerHTML = 'Game Connected: Your Turn';
     enableGame();
@@ -40,6 +42,7 @@ function onRemotePlayers(data){
     var newPlayer = new Player();
     newPlayer.id = data.id;
     newPlayer.symbol = data.symbol;
+    newPlayer.gameId = data.gameId;
     remotePlayers[data.id] = newPlayer;
     document.getElementById('playerCount').innerHTML = 'Game Connected: Wait For Your Turn';
     // remotePlayers.push(newPlayer);
@@ -48,9 +51,14 @@ function onSyncMovePlayer(data) {
     document.getElementById('child' + data.row + data.column).innerHTML = remotePlayers[data.id].symbol;
     localPlayer.setSelection(data.row, data.column, remotePlayers[data.id].symbol);
     remotePlayers[data.id].setSelection(data.row, data.column, remotePlayers[data.id].symbol)
+
+    localPlayer.clicks +=1;
+    remotePlayers[Object.keys(remotePlayers)[0]].clicks += 1;
     enableGame();
     console.log('Player move: ' + data.row, data.column, remotePlayers[data.id].symbol);
     document.getElementById('playerCount').innerHTML = 'Game Connected: Your Turn: ' + localPlayer.symbol;
+
+    checkRemoteWinnings();
 };
 function onRemovePlayer(data) {
     console.log('Remove Player: ' + data.id);
@@ -74,12 +82,39 @@ function addGameEvents(){
                 console.log('clicked child' + i + j);
                 localPlayer.setSelection(i, j);
                 remotePlayers[Object.keys(remotePlayers)[0]].setSelection(i, j, localPlayer.symbol);
+                localPlayer.clicks +=1;
+                remotePlayers[Object.keys(remotePlayers)[0]].clicks += 1;
                 document.getElementById('playerCount').innerHTML = 'Game Connected: Wait For Your Turn: ' + localPlayer.symbol;
                 disableGame();
+                checkWinnings();
             }.bind(this, i, j));
         }
     }
 };
+
+function checkRemoteWinnings(){
+    if(remotePlayers[Object.keys(remotePlayers)[0]].hasWon()){
+        document.getElementById('winner').style.display = 'block';
+        document.getElementById('winner').innerHTML = 'You Loose!';
+        disableGame();
+    }else if(remotePlayers[Object.keys(remotePlayers)[0]].clicks == 9){
+        document.getElementById('winner').style.display = 'block';
+        document.getElementById('winner').innerHTML = 'Draw!';
+        disableGame();
+    }
+}
+
+function checkWinnings(){
+    if(localPlayer.hasWon()){
+        document.getElementById('winner').style.display = 'block';
+        document.getElementById('winner').innerHTML = 'You Won!';
+        disableGame();
+    }else if(localPlayer.clicks == 9){
+        document.getElementById('winner').style.display = 'block';
+        document.getElementById('winner').innerHTML = 'Draw!';
+        disableGame();
+    }
+}
 
 function enableGame(){
     canPlay = true;

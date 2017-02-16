@@ -4,13 +4,21 @@ var fs = require('fs');
 var path = require('path');
 var Player = require('./player.js');
 Player = Player.Player;
-console.log(Player);
 
+var maxPlayerPerGame = 2;
 var players = {};
+var games = {};
+// games = {
+//     'game1': {
+//         'isGameOpen': true,
+//         'players': {
+//             'player1': {},
+//             'player2': {}
+//         }
+//     }
+// }
 
 var server = http.createServer(function(request, response){
-    console.log('request starting');
-
     var filePath = '.' + request.url;
     if(filePath == './'){
         filePath = './index.html';
@@ -54,36 +62,45 @@ console.log('server is running in 8081');
 var io = require('socket.io').listen(server);
 
 server.listen(8081);
-var totalConnection = 0;
 io.sockets.on('connection', onSocketConnection);
 
 function onSocketConnection(socket){
-    // console.log("New player has connected: "+socket.id);
+    var isExistingGameAvailable = checkForExistingGame();
+    // console.log('if Existing game is there: ' + isExistingGameAvailable);
+    if(!isExistingGameAvailable){
+        createGame(socket);
+    }else{
+        console.log('adding player in Existing game: ' + isExistingGameAvailable);
+        createNewPlayer(socket, isExistingGameAvailable);
+    }
     socket.on("disconnect", onClientDisconnect);
-    // socket.on("new player", onNewPlayer);
-    // socket.on("move player", function(){console.log('clicked on cliend');});
     socket.on("move player", onMovePlayer);
-    // console.log(socket.id);
-
-    // players[totalConnection] = players.id;
-
-    // socket.broadcast.emit('totalPlayers', {players: players.length});
-    // socket.emit('totalPlayers', {players: players.length});
-
-    // socket.on('disconnect', function(){
-    //     players.splice(players.indexOf(socket.id), 1);
-    //     --totalConnection;
-    //     socket.broadcast.emit('totalPlayers', {players: totalConnection});
-    //     console.log('socket disconnected');
-    // });
-
-    // socket.on('clicked', function(data){
-    //     console.log('received the clicked event: ' + data.row, data.column);
-    //     socket.broadcast.emit('emittedClick', data);
-    //     console.log('brodcasted click event');
-    // });
-    // console.log(++totalConnection + 'player connected');
-    createNewPlayer(socket);
+    // createNewPlayer(socket);
+};;
+function createGame(socket){
+    var gameId = parseInt(Math.random()*100000).toString();
+    games[gameId] = new Object();
+    games[gameId].isGameOpen = true;
+    games[gameId].players = {};
+    console.log('creating new game with id: ' + gameId);
+    createNewPlayer(socket, gameId);
+};
+function checkForExistingGame(){
+    var openGameId = 0;
+    if(Object.keys(games).length === 0){
+        return false;
+    }else{
+        Object.keys(games).forEach(function(gameId, index){
+            if(games[gameId].isGameOpen){
+                openGameId = gameId;
+            }
+        });
+        if(openGameId === 0){
+            return false;
+        }else{
+            return openGameId;
+        }
+    }
 };
 function onMovePlayer(data){
     players[this.id].setSelection(data.row, data.column);
@@ -99,7 +116,7 @@ function onClientDisconnect() {
     console.log("Player has disconnected: "+this.id);
     delete players[this.id];
 };
-function createNewPlayer(data) {
+function createNewPlayer(data, gameId) {
     var self = data;
     var symbol = 'O';
     if(Object.keys(players).length === 1){
@@ -110,14 +127,21 @@ function createNewPlayer(data) {
     var newPlayer = new Player();
     newPlayer.id = self.id;
     newPlayer.symbol = symbol;
-    self.emit("my id", {id: newPlayer.id, symbol: symbol});
-    self.broadcast.emit("new player", {id: newPlayer.id, symbol: newPlayer.symbol});
-    Object.keys(players).forEach(function(id, index){
-        self.emit("remote players", {id: id, symbol: players[id].symbol});
+    self.emit("my id", {id: newPlayer.id, symbol: symbol, gameId: gameId});
+    //broadcast only with current game id
+    self.broadcast.emit("new player", {id: newPlayer.id, symbol: newPlayer.symbol, gameId: gameId});
+    //send all remote players of current game
+    Object.keys(games[gameId].players).forEach(function(id, index){
+        self.emit("remote players", {id: id, symbol: games[gameId].players[id].symbol});
     }.bind(self));
 
-    players[self.id] = newPlayer;
-    console.log('new Player connected: ' + self.id + ', total Players: ' + Object.keys(players).length);
+
+    games[gameId].players[self.id] = newPlayer;
+    if(Object.keys(games[gameId].players).length === maxPlayerPerGame){
+        games[gameId].isGameOpen = false;
+    }
+    
+    console.log('new Player connected: ' + self.id + ', in gameId: ' + gameId + ', isGameOpen: ' + games[gameId].isGameOpen + ', players: ' + Object.keys(games[gameId].players).length);
 };
 
 
