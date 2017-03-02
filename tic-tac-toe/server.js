@@ -7,7 +7,9 @@ Player = Player.Player;
 
 var maxPlayerPerGame = 2;
 var players = {};
-var games = {};
+var games = {
+    totalPlayers: 0
+};
 // games = {
 //     'game1': {
 //         'isGameOpen': true,
@@ -55,7 +57,7 @@ var server = http.createServer(function(request, response){
             response.end(content, 'utf-8');
         }
     });
-
+    // console.log('player name: ' + request.handshake.query);
 });
 
 console.log('server is running in 8081');
@@ -66,6 +68,7 @@ io.sockets.on('connection', onSocketConnection);
 
 function onSocketConnection(socket){
     var isExistingGameAvailable = checkForExistingGame();
+    console.log('player name: ' + socket.handshake.query.name);
     // console.log('if Existing game is there: ' + isExistingGameAvailable);
     if(!isExistingGameAvailable){
         createGame(socket);
@@ -103,12 +106,12 @@ function checkForExistingGame(){
     }
 };
 function onMovePlayer(data){
-    players[this.id].setSelection(data.row, data.column);
+    games[data.gameId].players[this.id].setSelection(data.row, data.column);
 
-    Object.keys(players).forEach(function(id, index){
-        players[id].setSelection(data.row, data.column);
+    Object.keys(games[data.gameId].players).forEach(function(id, index){
+        games[data.gameId].players[id].setSelection(data.row, data.column);
     }.bind(this));    
-    this.broadcast.emit('sync move player', {row: data.row, column: data.column, id: this.id});
+    this.broadcast.emit('sync move player', {row: data.row, column: data.column, id: this.id, gameId: data.gameId});
     console.log('clicked by: ' + this.id + ', at location: ' + data.row, data.column);
 };
 function onClientDisconnect() {
@@ -119,8 +122,8 @@ function onClientDisconnect() {
 function createNewPlayer(data, gameId) {
     var self = data;
     var symbol = 'O';
-    if(Object.keys(players).length === 1){
-        if(players[Object.keys(players)[0]].symbol === 'O'){
+    if(Object.keys(games[gameId].players).length === 1){
+        if(games[gameId].players[Object.keys(games[gameId].players)[0]].symbol === 'O'){
             symbol = 'X';
         }
     }
@@ -140,7 +143,9 @@ function createNewPlayer(data, gameId) {
     if(Object.keys(games[gameId].players).length === maxPlayerPerGame){
         games[gameId].isGameOpen = false;
     }
-    
+    games.totalPlayers++;
+    self.emit("total players", {totalPlayers: games.totalPlayers});
+    self.broadcast.emit("total players", {totalPlayers: games.totalPlayers});
     console.log('new Player connected: ' + self.id + ', in gameId: ' + gameId + ', isGameOpen: ' + games[gameId].isGameOpen + ', players: ' + Object.keys(games[gameId].players).length);
 };
 
