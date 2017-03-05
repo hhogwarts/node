@@ -8,8 +8,10 @@ Player = Player.Player;
 var maxPlayerPerGame = 2;
 var players = {};
 var games = {
-    totalPlayers: 0
 };
+var playersGamesMapping = {
+
+}
 // games = {
 //     'game1': {
 //         'isGameOpen': true,
@@ -67,26 +69,46 @@ server.listen(8081);
 io.sockets.on('connection', onSocketConnection);
 
 function onSocketConnection(socket){
-    var isExistingGameAvailable = checkForExistingGame();
-    console.log('player name: ' + socket.handshake.query.name);
-    // console.log('if Existing game is there: ' + isExistingGameAvailable);
-    if(!isExistingGameAvailable){
-        createGame(socket);
-    }else{
-        console.log('adding player in Existing game: ' + isExistingGameAvailable);
-        createNewPlayer(socket, isExistingGameAvailable);
-    }
+    var playerName = socket.handshake.query.name;
+    preCreateGame(socket, playerName);
     socket.on("disconnect", onClientDisconnect);
     socket.on("move player", onMovePlayer);
-    // createNewPlayer(socket);
-};;
-function createGame(socket){
+    socket.on('play again', onPlayAgain);
+};
+function onPlayAgain(data){
+    //data.gameId, game completed
+    //remove game from games Object if not already deleted
+    //remove data.playerId from playersGamesMapping Object
+    //new game should updated with data.playerId
+    var socket = this;
+    var gameId = data.gameId;
+    var playerId = data.playerId;
+    var playerName = data.playerName;
+
+    if(games[gameId] !== undefined){
+        delete games[gameId];
+    }
+    if(playersGamesMapping[playerId] !== undefined){
+        delete playersGamesMapping[playerId];
+    }
+
+    preCreateGame(socket, playerName);
+};
+function preCreateGame(socket, playerName){
+    var isExistingGameAvailable = checkForExistingGame();
+    if(!isExistingGameAvailable){
+        createGame(socket, playerName);
+    }else{
+        createNewPlayer(socket, isExistingGameAvailable, playerName);
+    }
+};
+function createGame(socket, playerName){
     var gameId = parseInt(Math.random()*100000).toString();
     games[gameId] = new Object();
     games[gameId].isGameOpen = true;
     games[gameId].players = {};
     console.log('creating new game with id: ' + gameId);
-    createNewPlayer(socket, gameId);
+    createNewPlayer(socket, gameId, playerName);
 };
 function checkForExistingGame(){
     var openGameId = 0;
@@ -106,20 +128,44 @@ function checkForExistingGame(){
     }
 };
 function onMovePlayer(data){
-    games[data.gameId].players[this.id].setSelection(data.row, data.column);
+    // // Not Required for now,
+    // // All calculations are done in client side
+    // games[data.gameId].players[this.id].setSelection(data.row, data.column);
 
-    Object.keys(games[data.gameId].players).forEach(function(id, index){
-        games[data.gameId].players[id].setSelection(data.row, data.column);
-    }.bind(this));    
+    // Object.keys(games[data.gameId].players).forEach(function(id, index){
+    //     games[data.gameId].players[id].setSelection(data.row, data.column);
+    // }.bind(this));    
     this.broadcast.emit('sync move player', {row: data.row, column: data.column, id: this.id, gameId: data.gameId});
     console.log('clicked by: ' + this.id + ', at location: ' + data.row, data.column);
 };
 function onClientDisconnect() {
+    var gameId = playersGamesMapping[this.id];
+
+    delete playersGamesMapping[this.id];
+    delete games[gameId].players[this.id];
+
+    console.log(games);
+    console.log(gameId);
+    console.log(playersGamesMapping);
+    console.log(games[gameId].players);
+
+    if(games[gameId] !== undefined && games[gameId].players !== undefined && Object.keys(games[gameId].players).length === 0){
+        //all players are disconnected from game
+        //remove game from model
+        delete games[gameId];
+        console.log('Deleting game from games: ', gameId);
+    }else if(games[gameId].players !== undefined){
+        //if any player still connected
+        //mark that game as open for other players to connect
+        console.log('setting ' +[gameId] + ', game isGameOpen: ', true);
+        games[gameId].isGameOpen = true;
+    }
+
+    this.broadcast.emit("total players", {totalPlayers: Object.keys(playersGamesMapping).length});
     this.broadcast.emit("remove player", {id: this.id});
     console.log("Player has disconnected: "+this.id);
-    delete players[this.id];
-};
-function createNewPlayer(data, gameId) {
+}; 
+function createNewPlayer(data, gameId, playerName) {
     var self = data;
     var symbol = 'O';
     if(Object.keys(games[gameId].players).length === 1){
@@ -128,24 +174,28 @@ function createNewPlayer(data, gameId) {
         }
     }
     var newPlayer = new Player();
+    newPlayer.name = playerName;
     newPlayer.id = self.id;
+    newPlayer.gameId = gameId;
     newPlayer.symbol = symbol;
     self.emit("my id", {id: newPlayer.id, symbol: symbol, gameId: gameId});
     //broadcast only with current game id
-    self.broadcast.emit("new player", {id: newPlayer.id, symbol: newPlayer.symbol, gameId: gameId});
+    self.broadcast.emit("new player", {id: newPlayer.id, symbol: newPlayer.symbol, gameId: gameId, playerName: newPlayer.name});
     //send all remote players of current game
     Object.keys(games[gameId].players).forEach(function(id, index){
-        self.emit("remote players", {id: id, symbol: games[gameId].players[id].symbol});
+        self.emit("remote players", {id: id, symbol: games[gameId].players[id].symbol, playerName: games[gameId].players[id].name});
+        console.log('sending player name as: to Local: ' + games[gameId].players[id].name);
     }.bind(self));
 
+    console.log('remote: ' + newPlayer.name);
 
     games[gameId].players[self.id] = newPlayer;
     if(Object.keys(games[gameId].players).length === maxPlayerPerGame){
         games[gameId].isGameOpen = false;
     }
-    games.totalPlayers++;
-    self.emit("total players", {totalPlayers: games.totalPlayers});
-    self.broadcast.emit("total players", {totalPlayers: games.totalPlayers});
+    playersGamesMapping[self.id] = gameId;
+    self.emit("total players", {totalPlayers: Object.keys(playersGamesMapping).length});
+    self.broadcast.emit("total players", {totalPlayers: Object.keys(playersGamesMapping).length});
     console.log('new Player connected: ' + self.id + ', in gameId: ' + gameId + ', isGameOpen: ' + games[gameId].isGameOpen + ', players: ' + Object.keys(games[gameId].players).length);
 };
 

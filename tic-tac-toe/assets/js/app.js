@@ -29,7 +29,8 @@ function onMyId(data){
     newPlayer.symbol = data.symbol;
     newPlayer.gameId = data.gameId;
     localPlayer = newPlayer;
-    document.
+    document.getElementById('gameId').innerHTML = "Game: " + data.gameId;
+    document.getElementById('welcomeMessage').innerHTML = "Welcome: " + localPlayer.name;
     document.getElementById('playerCount').innerHTML = '1 Connected: Waiting for Another Player';
 }
 function onNewPlayer(data) {
@@ -41,8 +42,10 @@ function onNewPlayer(data) {
         newPlayer.id = data.id;
         newPlayer.symbol = data.symbol;
         newPlayer.gameId = data.gameId;
+        newPlayer.name = data.playerName;
         remotePlayers[data.id] = newPlayer;
         document.getElementById('playerCount').innerHTML = 'Game Connected: Your Turn';
+        document.getElementById('playingWith').innerHTML = 'Playing With: ' + data.playerName;
         enableGame();
     }
 };
@@ -54,7 +57,9 @@ function onRemotePlayers(data){
     newPlayer.id = data.id;
     newPlayer.symbol = data.symbol;
     newPlayer.gameId = data.gameId;
+    newPlayer.name = data.playerName;
     remotePlayers[data.id] = newPlayer;
+    document.getElementById('playingWith').innerHTML = 'Playing With: ' + data.playerName;
     document.getElementById('playerCount').innerHTML = 'Game Connected: Wait For Your Turn';
     // remotePlayers.push(newPlayer);
 }
@@ -64,8 +69,8 @@ function onSyncMovePlayer(data) {
         localPlayer.setSelection(data.row, data.column, remotePlayers[data.id].symbol);
         remotePlayers[data.id].setSelection(data.row, data.column, remotePlayers[data.id].symbol)
 
-        localPlayer.clicks +=1;
-        remotePlayers[Object.keys(remotePlayers)[0]].clicks += 1;
+        localPlayer.setClicks(localPlayer.getClicks() + 1);
+        remotePlayers[Object.keys(remotePlayers)[0]].setClicks(remotePlayers[Object.keys(remotePlayers)[0]].getClicks() + 1);
         enableGame();
         console.log('Player move: ' + data.row, data.column, remotePlayers[data.id].symbol);
         document.getElementById('playerCount').innerHTML = 'Game Connected: Your Turn: ' + localPlayer.symbol;
@@ -74,8 +79,15 @@ function onSyncMovePlayer(data) {
     }
 };
 function onRemovePlayer(data) {
-    console.log('Remove Player: ' + data.id);
-    delete remotePlayers[data.id];
+    if(remotePlayers[data.id] !== undefined){
+        console.log('Remove Player: ' + data.id);
+        delete remotePlayers[data.id];
+        //2 Player game, so reset and disable game of localPlayer
+        //when other player got Disconnected
+        resetAndDisableGame();
+        document.getElementById('playingWith').innerHTML = "Player Disconnected";
+        document.getElementById('playerCount').innerHTML = '1 Connected: Waiting for Another Player';
+    }
 };
 
 function addGameEvents(){
@@ -96,38 +108,49 @@ function addGameEvents(){
                 console.log('clicked child' + i + j);
                 localPlayer.setSelection(i, j);
                 remotePlayers[Object.keys(remotePlayers)[0]].setSelection(i, j, localPlayer.symbol);
-                localPlayer.clicks +=1;
-                remotePlayers[Object.keys(remotePlayers)[0]].clicks += 1;
+                console.log('clicks: ' + localPlayer.getClicks());
+                localPlayer.setClicks(localPlayer.getClicks() + 1);
+                // localPlayer.clicks +=1;
+                remotePlayers[Object.keys(remotePlayers)[0]].setClicks(remotePlayers[Object.keys(remotePlayers)[0]].getClicks() + 1);
                 document.getElementById('playerCount').innerHTML = 'Game Connected: Wait For Your Turn: ' + localPlayer.symbol;
                 disableGame();
                 checkWinnings();
             }.bind(this, i, j));
         }
     }
+    jQuery('#playAgain').on('click', function(){
+        socket.emit('play again', {
+            gameId: localPlayer.gameId,
+            playerId: localPlayer.id,
+            playerName: localPlayer.name
+        });
+    });
 };
 
 function checkRemoteWinnings(){
     if(remotePlayers[Object.keys(remotePlayers)[0]].hasWon()){
-        document.getElementById('winner').style.display = 'block';
         document.getElementById('winner').innerHTML = 'You Loose!';
-        disableGame();
-    }else if(remotePlayers[Object.keys(remotePlayers)[0]].clicks == 9){
-        document.getElementById('winner').style.display = 'block';
+    }else if(remotePlayers[Object.keys(remotePlayers)[0]].getClicks() == 9){
         document.getElementById('winner').innerHTML = 'Draw!';
-        disableGame();
+    }else{
+        return;
     }
+    document.getElementById('playAgain').style.display = 'block';
+    document.getElementById('winner').style.display = 'block';
+    disableGame();
 }
 
 function checkWinnings(){
     if(localPlayer.hasWon()){
-        document.getElementById('winner').style.display = 'block';
         document.getElementById('winner').innerHTML = 'You Won!';
-        disableGame();
-    }else if(localPlayer.clicks == 9){
-        document.getElementById('winner').style.display = 'block';
+    }else if(localPlayer.getClicks() == 9){
         document.getElementById('winner').innerHTML = 'Draw!';
-        disableGame();
+    }else{
+        return;
     }
+    disableGame();
+    document.getElementById('winner').style.display = 'block';
+    document.getElementById('playAgain').style.display = 'block';
 }
 
 function enableGame(){
@@ -140,16 +163,25 @@ function disableGame(){
     document.getElementById('parent').className = 'disabled';
 }
 
+function resetAndDisableGame(){
+    for(var i = 0; i <= 2; i++){
+        for(var j = 0; j <= 2; j++){
+            document.getElementById('child' + i + j).innerHTML = '';
+        }
+    }
+    localPlayer.resetGame();
+    disableGame();
+}
+
 function ontotalPlayers(data){
     document.getElementById('totalPlayers').innerHTML = "Total Players: " + data.totalPlayers;
 }
 
 function makeName(){
-    var text = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var random = Math.floor(Math.random() * (50));
+    return nameList[random];
+}
 
-    for( var i=0; i < 5; i++ )
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    return text;
+function postMessageToLobby(msg){
+    document.getElementById('content').innerHTML += "<p>" + msg + "</p>";
 }

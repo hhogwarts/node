@@ -1,9 +1,10 @@
 var Player = function(){
     var id = '';
+    var name = '';
     var selectionMatrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
     var winType = '';   //row0, row1, row2, column0, column1, column2, diagonal0(00 -> 22), diagonal1(02 -> 20)
     var symbol = '';
-    var totalClicks = 0;
+    var clicks = 0;
     var gameId = 0;
 
     var setSelection = function(row, column, sym){
@@ -12,8 +13,9 @@ var Player = function(){
         }
         selectionMatrix[row][column] = sym;
     };
-    var resetMatrix = function(){
+    var resetGame = function(){
         selectionMatrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+        setClicks(0);
     };
     var isClickable = function(i, j){
         if(selectionMatrix[i][j]){
@@ -55,16 +57,24 @@ var Player = function(){
     var getMatrix = function(){
         return selectionMatrix;
     };
+    var setClicks = function(n){
+        clicks = n
+    };
+    var getClicks = function(){
+        return clicks;
+    };
 
     return {
-        setSelection: setSelection,
-        resetMatrix: resetMatrix,
-        hasWon: hasWon,
         id: id,
+        name: name,
+        gameId: gameId,
         symbol: symbol,
-        isClickable: isClickable,
+        hasWon: hasWon,
+        getClicks: getClicks,
+        setClicks: setClicks,
         getMatrix: getMatrix,
-        clicks: totalClicks,
-        gameId: gameId
+        resetGame: resetGame,
+        isClickable: isClickable,
+        setSelection: setSelection
     };
 };

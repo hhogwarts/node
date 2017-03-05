@@ -1,13 +1,9 @@
 #parent{
     width: 340px;
-    height: 400px;
+    height: 430px;
     box-shadow: 0px 0px 16px black;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    position: absolute;
-    margin: auto;
+    float: left;
+    position: relative;
 }
 .child{
     width: 100px;
@@ -26,7 +22,7 @@
     margin-top: 10px;
     user-select: none;
 }
-#midHeader, #topHeader {
+#midHeader, #topHeader, #bottomHeader{
     width: 100%;
     height: 30px;
     box-shadow: 0px 0px 3px black;
@@ -42,12 +38,21 @@
 }
 #playingWith{
     font-size: 13px;
+    width: 50%;
+    left: 50%;
+}
+#gameId{
+    width: 50%;
+    float: left;
 }
 #totalPlayers, #playerCount{
     width: 44%;
     right: 3%;
     position: absolute;
     text-align: right;
+}
+#playerCount{
+    width: 94%;
 }
 .disabled .child {
     background-color: #eeeeee;
@@ -69,4 +74,38 @@
     text-shadow: 3px 3px 4px darkred;
     line-height: 100px;
     display: none;
+}
+#lobby{
+    width: 340px;
+    height: 430px;
+    background-color: transparent;
+    position: absolute;
+    left: 340px;
+    box-shadow: 0px 0px 16px black;
+    overflow: scroll;
+}
+#container{
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: 680px;
+    height: 430px;
+}
+#lobby p {
+    margin-left: 10px;
+}
+#playAgain{
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100px;
+    height: 25px;
+    margin: auto;
+    display: none;
+    margin-top: 238px;
+    position: absolute;
 }
