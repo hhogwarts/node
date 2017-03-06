@@ -13,6 +13,7 @@ function setEventHandlers(){
     socket.on("remove player", onRemovePlayer);
     socket.on("remote players", onRemotePlayers);
     socket.on("total players", ontotalPlayers);
+    socket.on("lobby message", onLobbyMessage);
     socket.on("my id", onMyId);
     addGameEvents();
 };
@@ -32,6 +33,7 @@ function onMyId(data){
     document.getElementById('gameId').innerHTML = "Game: " + data.gameId;
     document.getElementById('welcomeMessage').innerHTML = "Welcome: " + localPlayer.name;
     document.getElementById('playerCount').innerHTML = '1 Connected: Waiting for Another Player';
+    resetGame();
 }
 function onNewPlayer(data) {
     //check if Player if from same game or different game
@@ -84,7 +86,8 @@ function onRemovePlayer(data) {
         delete remotePlayers[data.id];
         //2 Player game, so reset and disable game of localPlayer
         //when other player got Disconnected
-        resetAndDisableGame();
+        resetGame();
+        disableGame();
         document.getElementById('playingWith').innerHTML = "Player Disconnected";
         document.getElementById('playerCount').innerHTML = '1 Connected: Waiting for Another Player';
     }
@@ -128,6 +131,7 @@ function addGameEvents(){
 };
 
 function checkRemoteWinnings(){
+    console.log('checkRemoteWinnings');
     if(remotePlayers[Object.keys(remotePlayers)[0]].hasWon()){
         document.getElementById('winner').innerHTML = 'You Loose!';
     }else if(remotePlayers[Object.keys(remotePlayers)[0]].getClicks() == 9){
@@ -135,20 +139,24 @@ function checkRemoteWinnings(){
     }else{
         return;
     }
+    disableGame();
+    document.getElementById('playerCount').innerHTML = "Game completed.";
     document.getElementById('playAgain').style.display = 'block';
     document.getElementById('winner').style.display = 'block';
-    disableGame();
 }
 
 function checkWinnings(){
+    console.log('checkWinnings');
     if(localPlayer.hasWon()){
         document.getElementById('winner').innerHTML = 'You Won!';
+        socket.emit('lobby message', {message: localPlayer.name + ' has won game: ' + localPlayer.gameId});
     }else if(localPlayer.getClicks() == 9){
         document.getElementById('winner').innerHTML = 'Draw!';
     }else{
         return;
     }
     disableGame();
+    document.getElementById('playerCount').innerHTML = "Game Compleated.";
     document.getElementById('winner').style.display = 'block';
     document.getElementById('playAgain').style.display = 'block';
 }
@@ -156,21 +164,27 @@ function checkWinnings(){
 function enableGame(){
     canPlay = true;
     document.getElementById('parent').className = '';
+    console.log('enableGame');
 }
 
 function disableGame(){
     canPlay = false;
     document.getElementById('parent').className = 'disabled';
+    console.log('disableGame');
 }
 
-function resetAndDisableGame(){
+function resetGame(){
     for(var i = 0; i <= 2; i++){
         for(var j = 0; j <= 2; j++){
             document.getElementById('child' + i + j).innerHTML = '';
         }
     }
     localPlayer.resetGame();
-    disableGame();
+    remotePlayers = {};
+    jQuery('#winner').hide();
+    jQuery('#playAgain').hide();
+    document.getElementById('playingWith').innerHTML = "Playing With: ";
+    console.log('resetGame');
 }
 
 function ontotalPlayers(data){
@@ -182,6 +196,8 @@ function makeName(){
     return nameList[random];
 }
 
-function postMessageToLobby(msg){
-    document.getElementById('content').innerHTML += "<p>" + msg + "</p>";
+function onLobbyMessage(data){
+    var lobby = document.getElementById('lobby');
+    lobby.scrollTop = lobby.scrollHeight;
+    document.getElementById('content').innerHTML += "<p>" + data.message + "</p>";
 }

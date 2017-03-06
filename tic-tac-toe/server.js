@@ -74,6 +74,7 @@ function onSocketConnection(socket){
     socket.on("disconnect", onClientDisconnect);
     socket.on("move player", onMovePlayer);
     socket.on('play again', onPlayAgain);
+    socket.on('lobby message', onLobbyMessage);
 };
 function onPlayAgain(data){
     //data.gameId, game completed
@@ -99,6 +100,7 @@ function preCreateGame(socket, playerName){
     if(!isExistingGameAvailable){
         createGame(socket, playerName);
     }else{
+        sendLobbyMessage(socket, playerName + ' has joined game: ' + isExistingGameAvailable);
         createNewPlayer(socket, isExistingGameAvailable, playerName);
     }
 };
@@ -109,6 +111,7 @@ function createGame(socket, playerName){
     games[gameId].players = {};
     console.log('creating new game with id: ' + gameId);
     createNewPlayer(socket, gameId, playerName);
+    sendLobbyMessage(socket, playerName + ' created new game: ' + gameId);
 };
 function checkForExistingGame(){
     var openGameId = 0;
@@ -140,14 +143,10 @@ function onMovePlayer(data){
 };
 function onClientDisconnect() {
     var gameId = playersGamesMapping[this.id];
+    var playerName = games[gameId].players[this.id].name;
 
     delete playersGamesMapping[this.id];
     delete games[gameId].players[this.id];
-
-    console.log(games);
-    console.log(gameId);
-    console.log(playersGamesMapping);
-    console.log(games[gameId].players);
 
     if(games[gameId] !== undefined && games[gameId].players !== undefined && Object.keys(games[gameId].players).length === 0){
         //all players are disconnected from game
@@ -163,6 +162,7 @@ function onClientDisconnect() {
 
     this.broadcast.emit("total players", {totalPlayers: Object.keys(playersGamesMapping).length});
     this.broadcast.emit("remove player", {id: this.id});
+    this.broadcast.emit("lobby message", {message: playerName + ' disconnected from game: ' + gameId});
     console.log("Player has disconnected: "+this.id);
 }; 
 function createNewPlayer(data, gameId, playerName) {
@@ -198,6 +198,15 @@ function createNewPlayer(data, gameId, playerName) {
     self.broadcast.emit("total players", {totalPlayers: Object.keys(playersGamesMapping).length});
     console.log('new Player connected: ' + self.id + ', in gameId: ' + gameId + ', isGameOpen: ' + games[gameId].isGameOpen + ', players: ' + Object.keys(games[gameId].players).length);
 };
+
+function onLobbyMessage(data){
+    sendLobbyMessage(this, data.message);
+}
+
+function sendLobbyMessage(socket, message){
+    socket.emit("lobby message", {message: message});
+    socket.broadcast.emit("lobby message", {message: message});
+}
 
 
 

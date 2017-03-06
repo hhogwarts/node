@@ -39,7 +39,7 @@ var nameList = [
     "Sushri", 
     "Anushi", 
     "Vija", 
-    "Manjushridulekha", 
+    "Manjushri", 
     "Guna", 
     "Shra", 
     "Rasha", 
