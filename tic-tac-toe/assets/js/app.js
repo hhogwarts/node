@@ -1,7 +1,7 @@
 var localPlayer;
 var remotePlayers = {};
 var playerName = makeName();
-var url = 'http://localhost:8081';
+var url = window.location.origin;
 var socket = io.connect(url, {query: 'name=' + playerName});
 var canPlay = false;
 var totalPlayers = 0;
